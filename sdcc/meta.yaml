@@ -27,6 +27,7 @@ requirements:
     - {{ compiler('cxx') }}   [not osx]
     - m2w64-toolchain         [win]
     - m2-bison                [win]
+    - m2-patch                [win]
     - m2-flex                 [win]
     - m2-make                 [win]
     - m2-texinfo              [win]
