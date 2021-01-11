@@ -89,31 +89,84 @@ builds like `gcc` generate a *lot* of output), and builds timing out
 
 ## Testing conda builds locally
 
-Given a fairly empty *disposable* Ubuntu x86-64 test environment (eg,
-created with Docker, or Vagrant), it is possible to simulate *part* of
-what Travis CI will do to test building individual toolchain architectures
+Given a fairly empty *disposable* Ubuntu x86-64 test environment (e.g.,
+created with Docker or Vagrant), it is possible to simulate *part* of
+what the CI does to test building individual toolchain architectures
 locally.
 
-This can be done with something like:
+The commands from the following subsections are enough to build a package
+in a "clean" docker container based on the *ubuntu* Docker image.
 
-```
-sudo apt-get update
-sudo apt-get install wget git
+### Prerequisites
 
-# Packages from ~/.travis.yml; realpath is in coreutils in Ubuntu 18.04
-# Plus libtool and pkg-config, which are needed for openocd
-#
-# sudo apt-get install realpath
-sudo apt-get install coreutils
+The only required prerequisites are:
+* [Git](https://git-scm.com/),
+* Conda installed and initialized, e.g., using
+[Miniconda](https://docs.conda.io/en/latest/miniconda.html)
+(it automatically makes required *python3* with *pip* and *setuptools*
+available),
+* [conda-build-prepare](https://github.com/litex-hub/conda-build-prepare),
+* this repository cloned to a local directory.
 
+All of these requirements can be satisfied using the following commands:
+
+```bash
+# Install git and wget (might require using `sudo`)
+apt-get update
+apt-get install -y git wget
+
+# Download Miniconda and install in CONDA_PATH
+CONDA_PATH=~/conda
+wget -c https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod a+x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh -p $CONDA_PATH -b -f
+
+# Initialize Conda in the shell
+eval "$("$CONDA_PATH/bin/conda" "shell.bash" 'hook' 2> /dev/null)"
+
+# Install `conda-build-prepare`
+python3 -m pip install git+https://github.com/litex-hub/conda-build-prepare@v0.1#egg=conda-build-prepare
+
+# Clone the litex-conda-compilers repository
 git clone https://github.com/litex-hub/litex-conda-compilers.git
 cd litex-conda-compilers
-./.travis/conda-get.sh
+```
 
-# Adapted from .travis/common.sh
-get_built_package() {
-   ./.travis/conda-env.sh render --output "$@" 2>/dev/null | grep conda-bld | grep tar.bz2 | tail -n 1 | sed -e's/-[0-9]\+\.tar/*.tar/' -e's/-git//'
-}
+### Required environment variables
+
+Most importantly, the `RECIPE` variable must be set with the appropriate
+recipe's path to build the chosen package.
+
+The recipe might require exporting some additional environment variables.
+Such variables must be set before preparing the recipe, which is done
+with one of the commands from the next subsection.
+
+Currently required additional environment variables are:
+* `TOOLCHAIN_ARCH` (by: `binutils`, `gcc/*`, `gdb` and `toolchain/linux-musl`
+recipes) – must contain a supported architecture name, ie. one of these:
+  * `lm32` (excluding `gcc/linux-musl` and `toolchain/linux-musl` recipes),
+  * `or1k`,
+  * `ppc64le` (only `binutils` and `gcc/linux-musl` recipes),
+  * `riscv32`,
+  * `riscv64`,
+  * `sh`.
+
+Almost all of the recipes require exporting `DATE_NUM` and `DATE_STR`
+variables, since those are used as a build number and a build string
+respectively for the created package.
+In the CI these variables are set based on the commit that triggered the
+workflow (i.e., this repository's commit, not the recipe's git source).
+
+```bash
+# Set required variables with some values if they haven't been set already
+RECIPE=${RECIPE:-binutils}
+if [ "$RECIPE" = "binutils"         \
+        -o "${RECIPE:0:4}" = "gcc/" \
+        -o "$RECIPE" = "gdb"        \
+        -o "$RECIPE" = "toolchain/linux-musl" ]; then
+    export TOOLCHAIN_ARCH=${TOOLCHAIN_ARCH:-riscv64}
+fi
+WORKDIR=${WORKDIR:-arbitrary-name}
 
 # Anchor the build date/time, so we have predictable versions and filenames
 # amongst related packages, and to make it easy to do package installs.
@@ -123,26 +176,48 @@ get_built_package() {
 # export DATE_NUM="$(date -u +%Y%m%d%H%M%S)"
 # export DATE_STR="$(date -u +%Y%m%d_%H%M%S)"
 #
-# Or lock to date/time of the last commit on git, as Travis CI config does
-# (see .travis/common.sh)
+# Or lock to date/time of the last commit on git, as it's done in the CI:
 #
-export DATE_TS="$(git log --format=%ct -n1)"
+DATE_TS="$(git log --format=%ct -n1)"
 export DATE_NUM="$(date --date=@${DATE_TS} -u +%Y%m%d%H%M%S)"
 export DATE_STR="$(date --date=@${DATE_TS} -u +%Y%m%d_%H%M%S)"
-
-# Combinations taken from .travis.yml
-TOOLCHAIN_ARCH=lm32
-export PACKAGE TOOLCHAIN_ARCH
-
-cd conda-hdmi2usb-packages
-
-for PACKAGE in binutils gcc/nostdc gcc/newlib; do
-  ./.travis/conda-env.sh build --check "${PACKAGE}"   # Downloads and caches stuff
-  ./.travis/conda-env.sh build         "${PACKAGE}"   # Actually build package
-  CONDA_OUT="$(get_built_package ${PACKAGE})" # Calculate output package
-  ./.travis/conda-env.sh install       "${CONDA_OUT}"
-done
 ```
+
+### Preparing and building the package
+
+After getting all prerequisites and setting the required variables, it
+is recommended to prepare the recipe before building, as it gives you
+the advantages described on [the `conda-build-prepare`'s
+GitHub page](https://github.com/litex-hub/conda-build-prepare).
+The tool is also used within the CI, which makes the locally built
+package much more similar to the one built by the CI workflow.
+
+The `WORKDIR` variable is the name of the directory that will be
+created  as an output of running `conda-build-prepare`.
+It will contain these subdirectories:
+* `conda-env`,
+* `git-repos` (if the recipe contains any git sources),
+* `recipe`.
+`WORKDIR` can thus be any valid directory name.
+
+The arguments passed with `--channels` and `--packages` switches to the
+`conda-build-prepare` are similar to those used within the CI workflow.
+
+```bash
+# Prepare the RECIPE with `conda-build-prepare`
+ADDITIONAL_PACKAGES="conda-build=3.20.3 conda-verify jinja2 pexpect python=3.7"
+python3 -m conda_build_prepare --channels litex-hub --packages $ADDITIONAL_PACKAGES \
+            --dir $WORKDIR $RECIPE
+
+# Activate prepared environment where `conda build` will be run
+conda activate $WORKDIR/conda-env
+
+
+# Build the package
+conda build $WORKDIR/recipe
+```
+
+### Additional information
 
 Expect packages like `binutils` to take 3-5 minutes to build, packages
 like `gcc/nostdc` to take 10-15 minutes to build, and packages like
