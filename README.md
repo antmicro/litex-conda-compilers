@@ -134,9 +134,6 @@ cd litex-conda-compilers
 
 ### Required environment variables
 
-Most importantly, the `RECIPE` variable must be set with the appropriate
-recipe's path to build the chosen package.
-
 The recipe might require exporting some additional environment variables.
 Such variables must be set before preparing the recipe, which is done
 with one of the commands from the next subsection.
@@ -157,18 +154,6 @@ In case they're unset, recipe preparation provides them with default values
 based on the latest commit's committer date from the repository holding the
 recipe.
 
-```bash
-# Set required variables with some values if they haven't been set already
-RECIPE=${RECIPE:-binutils}
-if [ "$RECIPE" = "binutils"         \
-        -o "${RECIPE:0:4}" = "gcc/" \
-        -o "$RECIPE" = "gdb"        \
-        -o "$RECIPE" = "toolchain/linux-musl" ]; then
-    export TOOLCHAIN_ARCH=${TOOLCHAIN_ARCH:-riscv64}
-fi
-WORKDIR=${WORKDIR:-arbitrary-name}
-```
-
 ### Preparing and building the package
 
 After getting all prerequisites and setting the required variables, it
@@ -178,29 +163,40 @@ GitHub page](https://github.com/litex-hub/conda-build-prepare).
 The tool is also used within the CI, which makes the locally built
 package much more similar to the one built by the CI workflow.
 
-The `WORKDIR` variable is the name of the directory that will be
-created  as an output of running `conda-build-prepare`.
-It will contain these subdirectories:
-* `conda-env`,
-* `git-repos` (if the recipe contains any git sources),
-* `recipe`.
-`WORKDIR` can thus be any valid directory name.
+If the provided commands are to be used unmodified, it is important to first
+set the `RECIPE_PATH` variable with the appropriate recipe path for the
+package chosen to be built.
+
+The `PREPARED_RECIPE_OUTPUTDIR` variable holds a path for the directory that will
+be created with output files after running `conda-build-prepare`.
+It can be any valid path ending with the name chosen for that new directory.
+The output files are described in detail on [the `conda-build-prepare`'s
+GitHub page](https://github.com/litex-hub/conda-build-prepare).
 
 The arguments passed with `--channels` and `--packages` switches to the
 `conda-build-prepare` are similar to those used within the CI workflow.
 
+The following commands are meant to be run from the repository root.
+All aforementioned variables can be modified to, e.g., build a package other
+than the `binutils-riscv64` used as an example or use another path for the
+`conda-build-prepare` output directory.
+
 ```bash
+# Set example variables
+PREPARED_RECIPE_OUTPUTDIR=cbp-outdir
+RECIPE_PATH=binutils
+export TOOLCHAIN_ARCH=riscv64
+
 # Prepare the RECIPE with `conda-build-prepare`
 ADDITIONAL_PACKAGES="conda-build=3.20.3 conda-verify jinja2 pexpect python=3.7"
 python3 -m conda_build_prepare --channels litex-hub --packages $ADDITIONAL_PACKAGES \
-            --dir $WORKDIR $RECIPE
+            --dir $PREPARED_RECIPE_OUTPUTDIR $RECIPE_PATH
 
 # Activate prepared environment where `conda build` will be run
-conda activate $WORKDIR/conda-env
-
+conda activate $PREPARED_RECIPE_OUTPUTDIR/conda-env
 
 # Build the package
-conda build $WORKDIR/recipe
+conda build $PREPARED_RECIPE_OUTPUTDIR/recipe
 ```
 
 ### Additional information
