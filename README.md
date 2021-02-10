@@ -151,11 +151,11 @@ recipes) – must contain a supported architecture name, ie. one of these:
   * `riscv64`,
   * `sh`.
 
-Almost all of the recipes require exporting `DATE_NUM` and `DATE_STR`
-variables, since those are used as a build number and a build string
-respectively for the created package.
-In the CI these variables are set based on the commit that triggered the
-workflow (i.e., this repository's commit, not the recipe's git source).
+The optional `DATE_NUM` and `DATE_STR` environment variables are used by the
+recipes to set the `build/number` and `build/string` keys during preparation.
+In case they're unset, recipe preparation provides them with default values
+based on the latest commit's committer date from the repository holding the
+recipe.
 
 ```bash
 # Set required variables with some values if they haven't been set already
@@ -167,20 +167,6 @@ if [ "$RECIPE" = "binutils"         \
     export TOOLCHAIN_ARCH=${TOOLCHAIN_ARCH:-riscv64}
 fi
 WORKDIR=${WORKDIR:-arbitrary-name}
-
-# Anchor the build date/time, so we have predictable versions and filenames
-# amongst related packages, and to make it easy to do package installs.
-#
-# Either to current date/time at the start of the build:
-#
-# export DATE_NUM="$(date -u +%Y%m%d%H%M%S)"
-# export DATE_STR="$(date -u +%Y%m%d_%H%M%S)"
-#
-# Or lock to date/time of the last commit on git, as it's done in the CI:
-#
-DATE_TS="$(git log --format=%ct -n1)"
-export DATE_NUM="$(date --date=@${DATE_TS} -u +%Y%m%d%H%M%S)"
-export DATE_STR="$(date --date=@${DATE_TS} -u +%Y%m%d_%H%M%S)"
 ```
 
 ### Preparing and building the package
