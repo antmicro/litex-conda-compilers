@@ -163,29 +163,54 @@ GitHub page](https://github.com/litex-hub/conda-build-prepare).
 The tool is also used within the CI, which makes the locally built
 package much more similar to the one built by the CI workflow.
 
-If the provided commands are to be used unmodified, it is important to first
-set the `RECIPE_PATH` variable with the appropriate recipe path for the
-package chosen to be built.
-
-The `PREPARED_RECIPE_OUTPUTDIR` variable holds a path for the directory that will
-be created with output files after running `conda-build-prepare`.
-It can be any valid path ending with the name chosen for that new directory.
-The output files are described in detail on [the `conda-build-prepare`'s
-GitHub page](https://github.com/litex-hub/conda-build-prepare).
+The tool is a Python module.
+The only required arguments are the path to the recipe corresponding to the
+package chosen to be built and the path for a directory that will be created
+with output files (`--dir` switch).
+The argument passed to the `--dir` switch can be any valid path ending with
+a name chosen for that directory.
 
 The arguments passed with `--channels` and `--packages` switches to the
 `conda-build-prepare` are similar to those used within the CI workflow.
+It is recommended to use the `litex-hub` channel because some recipes either
+require or simply should be built with packages from that channel.
 
-The following commands are meant to be run from the repository root.
-All aforementioned variables can be modified to, e.g., build a package other
-than the `binutils-riscv64` used as an example or use another path for the
-`conda-build-prepare` output directory.
+The required argument passed with `--dir` switch sets a path for a directory
+that will be created with output files after running `conda-build-prepare`.
+
+After preparing, that directory will contain such subdirectories:
+* `conda-env` with a clean Conda environment to host the build process,
+* `git-repos` with source git repositories cloned and slightly adjusted,
+* `recipe` with an adjusted recipe (locked requirements, version set etc.).
+
+To then build the package using these prepared subdirectories:
+* activate the Conda environment from the `conda-env` directory,
+* run `conda-build` tool on the `recipe` directory.
+
+More details can be found on [the `conda-build-prepare`'s
+GitHub page](https://github.com/litex-hub/conda-build-prepare).
+
+All of the following commands are meant to be run from the repository root.
+
+If the provided commands are to be used unmodified, it is important to first
+set the `RECIPE_PATH` variable with the proper recipe's path to build the
+chosen package and the variables mentioned in the previous subsection, if the
+recipe requires such.
+By default, the `binutils-riscv64` package will be built.
+
+The `PREPARED_RECIPE_OUTPUTDIR` variable sets the directory that will be
+created with the already described `conda-build-prepare`'s output
+subdirectories.
+By default, the `cbp-outdir` will be created in the repository root.
 
 ```bash
-# Set example variables
-PREPARED_RECIPE_OUTPUTDIR=cbp-outdir
-RECIPE_PATH=binutils
-export TOOLCHAIN_ARCH=riscv64
+# Some defaults for the variables used in subsequent commands
+PREPARED_RECIPE_OUTPUTDIR=${PREPARED_RECIPE_OUTPUTDIR:-cbp-outdir}
+if [ ! -v RECIPE_PATH ]; then
+        RECIPE_PATH=binutils
+        # TOOLCHAIN_ARCH is required by the `binutils` recipe
+        export TOOLCHAIN_ARCH=riscv64
+fi
 
 # Prepare the RECIPE with `conda-build-prepare`
 ADDITIONAL_PACKAGES="conda-build=3.20.3 conda-verify jinja2 pexpect python=3.7"
