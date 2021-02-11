@@ -103,10 +103,10 @@ The only required prerequisites are:
 * [Git](https://git-scm.com/),
 * Conda installed and initialized, e.g., using
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
-(it automatically makes required *python3* with *pip* and *setuptools*
-available),
-* [conda-build-prepare](https://github.com/litex-hub/conda-build-prepare),
-* this repository cloned to a local directory.
+(which includes self contained versions of the required *python3* with
+*pip* and *setuptools* tooling),
+* [conda-build-prepare](https://github.com/litex-hub/conda-build-prepare)
+and of course this repository cloned to a local directory.
 
 All of these requirements can be satisfied using the following commands:
 
