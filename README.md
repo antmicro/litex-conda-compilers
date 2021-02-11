@@ -89,13 +89,13 @@ builds like `gcc` generate a *lot* of output), and builds timing out
 
 ## Testing conda builds locally
 
-Given a fairly empty *disposable* Ubuntu x86-64 test environment (e.g.,
-created with Docker or Vagrant), it is possible to simulate *part* of
-what the CI does to test building individual toolchain architectures
-locally.
+It is recommend to build these packages in a fresh disposable environment
+such as a clean docker container.
+While the goal is for the conda environment to be totally self contained,
+there is a constant battle to make sure this happens.
 
 The commands from the following subsections are enough to build a package
-in a "clean" docker container based on the *ubuntu* Docker image.
+in a clean docker container based on the *ubuntu* Docker image.
 
 ### Prerequisites
 
