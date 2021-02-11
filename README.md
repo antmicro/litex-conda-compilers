@@ -90,25 +90,27 @@ builds like `gcc` generate a *lot* of output), and builds timing out
 ## Testing conda builds locally
 
 It is recommend to build these packages in a fresh disposable environment
-such as a clean docker container.
+such as a clean container (Docker, Podman etc.).
 While the goal is for the conda environment to be totally self contained,
 there is a constant battle to make sure this happens.
 
-The commands from the following subsections are enough to build a package
-in a clean docker container based on the *ubuntu* Docker image.
+The commands from the following subsections were tested to be enough to build
+a package in a clean container based on `ubuntu` (`16.04`-`20.04`) or `debian`
+(`8`-`10`) Docker image.
 
 ### Prerequisites
 
-The only required prerequisites are:
+Apart from cloning this repository to a local directory, the following
+prerequisites are required:
 * [Git](https://git-scm.com/),
 * Conda installed and initialized, e.g., using
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 (which includes self contained versions of the required *python3* with
 *pip* and *setuptools* tooling),
-* [conda-build-prepare](https://github.com/litex-hub/conda-build-prepare)
-and of course this repository cloned to a local directory.
+* [conda-build-prepare](https://github.com/litex-hub/conda-build-prepare).
 
-All of these requirements can be satisfied using the following commands:
+On Debian and Ubuntu, these requirements can be satisfied using the following
+commands:
 
 ```bash
 # Install git and wget (might require using `sudo`)
@@ -134,7 +136,7 @@ cd litex-conda-compilers
 
 ### Required environment variables
 
-The recipe might require exporting some additional environment variables.
+Some recipes require exporting additional environment variables.
 Such variables must be set before preparing the recipe, which is done
 with one of the commands from the next subsection.
 
@@ -148,22 +150,28 @@ recipes) – must contain a supported architecture name, ie. one of these:
   * `riscv64`,
   * `sh`.
 
-The optional `DATE_NUM` and `DATE_STR` environment variables are used by the
-recipes to set the `build/number` and `build/string` keys during preparation.
-In case they're unset, recipe preparation provides them with default values
+The `DATE_NUM` and `DATE_STR` environment variables are required by the most of
+this repository's recipes.
+Values of these variables are commonly used as `build/number` and
+`build/string` keys in the recipes.
+In case they're empty, recipe preparation provides them with default values
 based on the latest commit's committer date from the repository holding the
 recipe.
+If the recipe doesn't belong to a git repository, e.g., after downloading this
+repository as an archive, then these two variables must be set by the user.
+The `DATE_NUM` value is as constrained as the `build/number` key, i.e., it can
+only consist of decimal digits.
 
 ### Preparing and building the package
 
-After getting all prerequisites and setting the required variables, it
-is recommended to prepare the recipe before building, as it gives you
-the advantages described on [the `conda-build-prepare`'s
-GitHub page](https://github.com/litex-hub/conda-build-prepare).
-The tool is also used within the CI, which makes the locally built
-package much more similar to the one built by the CI workflow.
+After getting all prerequisites and setting the required variables, it is
+recommended to prepare the recipe with `conda-build-prepare` before building,
+as it gives you the advantages described [on the tool's GitHub page
+](https://github.com/litex-hub/conda-build-prepare).
+Since it's also used within the CI, the locally built packages will be much
+more similar to the ones built by the CI workflow.
 
-The tool is a Python module.
+The `conda-build-prepare` is a Python module with a CLI.
 The only required arguments are the path to the recipe corresponding to the
 package chosen to be built and the path for a directory that will be created
 with output files (`--dir` switch).
@@ -175,10 +183,7 @@ The arguments passed with `--channels` and `--packages` switches to the
 It is recommended to use the `litex-hub` channel because some recipes either
 require or simply should be built with packages from that channel.
 
-The required argument passed with `--dir` switch sets a path for a directory
-that will be created with output files after running `conda-build-prepare`.
-
-After preparing, that directory will contain such subdirectories:
+After preparing, the output directory will contain such subdirectories:
 * `conda-env` with a clean Conda environment to host the build process,
 * `git-repos` with source git repositories cloned and slightly adjusted,
 * `recipe` with an adjusted recipe (locked requirements, version set etc.).
@@ -211,6 +216,11 @@ if [ ! -v RECIPE_PATH ]; then
         # TOOLCHAIN_ARCH is required by the `binutils` recipe
         export TOOLCHAIN_ARCH=riscv64
 fi
+
+# Set these with a build date if a recipe isn't in any git repository
+# `DATE_NUM` can only contain decimal digits
+#export DATE_NUM=2102112024
+#export DATE_STR=210211_2024
 
 # Prepare the RECIPE with `conda-build-prepare`
 ADDITIONAL_PACKAGES="conda-build=3.20.3 conda-verify jinja2 pexpect python=3.7"
