@@ -112,6 +112,7 @@ prerequisites are required:
 On Debian and Ubuntu, these requirements can be satisfied using the following
 commands:
 
+<!-- name="install-prerequisites" -->
 ```bash
 # Install git and wget (might require using `sudo`)
 apt-get update
@@ -213,6 +214,7 @@ created with the already described `conda-build-prepare`'s output
 subdirectories.
 By default, the `cbp-outdir` will be created in the repository root.
 
+<!-- name="prepare-and-build" -->
 ```bash
 # Some defaults for the variables used in subsequent commands
 PREPARED_RECIPE_OUTPUTDIR=${PREPARED_RECIPE_OUTPUTDIR:-cbp-outdir}
