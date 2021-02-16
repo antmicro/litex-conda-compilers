@@ -127,7 +127,7 @@ chmod a+x Miniconda3-latest-Linux-x86_64.sh
 eval "$("$CONDA_PATH/bin/conda" "shell.bash" 'hook' 2> /dev/null)"
 
 # Install `conda-build-prepare`
-python3 -m pip install git+https://github.com/litex-hub/conda-build-prepare@v0.1#egg=conda-build-prepare
+python3 -m pip install git+https://github.com/litex-hub/conda-build-prepare@v0.1.1#egg=conda-build-prepare
 
 # Clone the litex-conda-compilers repository
 git clone https://github.com/litex-hub/litex-conda-compilers.git
@@ -154,13 +154,18 @@ The `DATE_NUM` and `DATE_STR` environment variables are required by the most of
 this repository's recipes.
 Values of these variables are commonly used as `build/number` and
 `build/string` keys in the recipes.
-In case they're empty, recipe preparation provides them with default values
-based on the latest commit's committer date from the repository holding the
-recipe.
-If the recipe doesn't belong to a git repository, e.g., after downloading this
-repository as an archive, then these two variables must be set by the user.
-The `DATE_NUM` value is as constrained as the `build/number` key, i.e., it can
-only consist of decimal digits.
+
+If the `DATE_STR` hasn't been set in the environment then it is set during the
+preparation based:
+* on the latest commit's committer date if the recipe belongs to a git
+  repository,
+* on the latest file modification date after checking all recipe files
+  otherwise,
+using UTC timezone and `%Y%m%d_%H%M%S` time format, e.g., `20210216_155420`.
+
+The `DATE_NUM` is always automatically set with all `DATE_STR` digits.
+In case of the aforementioned `DATE_STR` example, `20210216155420` would be
+used as the `DATE_NUM` value.
 
 ### Preparing and building the package
 
@@ -216,11 +221,6 @@ if [ ! -v RECIPE_PATH ]; then
         # TOOLCHAIN_ARCH is required by the `binutils` recipe
         export TOOLCHAIN_ARCH=riscv64
 fi
-
-# Set these with a build date if a recipe isn't in any git repository
-# `DATE_NUM` can only contain decimal digits
-#export DATE_NUM=2102112024
-#export DATE_STR=210211_2024
 
 # Prepare the RECIPE with `conda-build-prepare`
 ADDITIONAL_PACKAGES="conda-build=3.20.3 conda-verify jinja2 pexpect python=3.7"
