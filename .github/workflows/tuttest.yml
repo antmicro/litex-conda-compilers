@@ -20,9 +20,6 @@ env:
 jobs:
   grab-readme-commands:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Install tuttest
         run: |
