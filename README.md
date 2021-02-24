@@ -178,23 +178,35 @@ Since it's also used within the CI, the locally built packages will be much
 more similar to the ones built by the CI workflow.
 
 The `conda-build-prepare` is a Python module with a CLI.
-The only required arguments are the path to the recipe corresponding to the
-package chosen to be built and the path for a directory that will be created
-with output files (`--dir` switch).
-The argument passed to the `--dir` switch can be any valid path ending with
-a name chosen for that directory.
+Its calling signature is:
+```
+python3 -m conda_build_prepare
+[-h]
+[--channels CHANNEL [CHANNEL ...]]
+[--packages PACKAGE [PACKAGE ...]]
+--dir DIRECTORY
+RECIPE
+```
 
-The arguments passed with `--channels` and `--packages` switches to the
-`conda-build-prepare` are similar to those used within the CI workflow.
-It is recommended to use the `litex-hub` channel because some recipes either
-require or simply should be built with packages from that channel.
+The only required arguments are:
+* `--dir DIRECTORY` – the path for a directory that will be created with output
+  files (any valid path ending with a name chosen for that directory),
+* `RECIPE` – the path to the recipe corresponding to the package chosen to be
+  built.
 
-After preparing, the output directory will contain such subdirectories:
+To build a package similar to the one built in the CI it is recommended to pass
+such optional arguments:
+* `--channels litex-hub` – to search for build dependencies in the LiteX-Hub
+  channel in addition to the recipe-specific channels (from its `condarc` file),
+* `--packages conda-build=3.20.3 python=3.7` – to use the same versions of
+  packages that influence building as in the CI.
+
+After preparing, the output `DIRECTORY` will contain such subdirectories:
 * `conda-env` with a clean Conda environment to host the build process,
 * `git-repos` with source git repositories cloned and slightly adjusted,
 * `recipe` with an adjusted recipe (locked requirements, version set etc.).
 
-To then build the package using these prepared subdirectories:
+To build the package using these prepared subdirectories:
 * activate the Conda environment from the `conda-env` directory,
 * run `conda-build` tool on the `recipe` directory.
 
@@ -225,7 +237,7 @@ if [ ! -v RECIPE_PATH ]; then
 fi
 
 # Prepare the RECIPE with `conda-build-prepare`
-ADDITIONAL_PACKAGES="conda-build=3.20.3 conda-verify jinja2 pexpect python=3.7"
+ADDITIONAL_PACKAGES="conda-build=3.20.3 python=3.7"
 python3 -m conda_build_prepare --channels litex-hub --packages $ADDITIONAL_PACKAGES \
             --dir $PREPARED_RECIPE_OUTPUTDIR $RECIPE_PATH
 
