@@ -47,16 +47,14 @@ jobs:
           echo "# Checkout commands" >>$SCRIPT
           echo >>$SCRIPT
 
-      - name: Add checkout commands for a Pull Request CI
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Add checkout commands
         run: |
-          echo "git fetch origin $GITHUB_REF:ci-pr-branch" >>$SCRIPT
-          echo "git checkout ci-pr-branch" >>$SCRIPT
-
-      - name: Add checkout commands for a non-Pull Request CI
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          echo "git checkout $GITHUB_SHA" >>$SCRIPT
+          _branch="$GITHUB_SHA"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            _branch="ci-pr-branch"
+            echo "git fetch origin $GITHUB_REF:${_branch}" >>$SCRIPT
+          fi
+          echo "git checkout ${_branch}" >>$SCRIPT
 
       - name: Grab prepare-and-build commands with tuttest
         run: |
