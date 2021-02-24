@@ -171,9 +171,9 @@ used as the `DATE_NUM` value.
 ### Preparing and building the package
 
 After getting all prerequisites and setting the required variables, it is
-recommended to prepare the recipe with `conda-build-prepare` before building,
-as it gives you the advantages described [on the tool's GitHub page
-](https://github.com/litex-hub/conda-build-prepare).
+recommended to prepare the recipe with *conda-build-prepare* before building,
+as it gives you the advantages described [on the tool's GitHub
+page](https://github.com/litex-hub/conda-build-prepare).
 Since it's also used within the CI, the locally built packages will be much
 more similar to the ones built by the CI workflow.
 
@@ -197,18 +197,18 @@ The required arguments are:
   built.
 
 To build a package similarly to how the packages are built in the CI it is
-recommended to pass such optional arguments:
+recommended to pass the following optional arguments:
 * `--channels litex-hub` – to search for build dependencies in the LiteX-Hub
   channel in addition to the recipe-specific channels (from its `condarc` file),
 * `--packages conda-build=3.20.3 python=3.7` – to use the same versions of
   packages that influence building as in the CI.
 
-After preparing, the output `DIRECTORY` will contain such subdirectories:
+After preparing, the output `DIRECTORY` will contain subdirectories:
 * `conda-env` with a clean Conda environment to host the build process,
 * `git-repos` with source git repositories cloned and slightly adjusted,
 * `recipe` with an adjusted recipe (locked requirements, version set etc.).
 
-More details can be found on [the `conda-build-prepare`'s
+More details can be found on [the *conda-build-prepare*
 GitHub page](https://github.com/litex-hub/conda-build-prepare).
 
 #### Building the package
