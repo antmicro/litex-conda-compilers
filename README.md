@@ -177,6 +177,8 @@ as it gives you the advantages described [on the tool's GitHub page
 Since it's also used within the CI, the locally built packages will be much
 more similar to the ones built by the CI workflow.
 
+#### Preparing the recipe with *conda-build-prepare*
+
 The `conda-build-prepare` is a Python module with a CLI.
 Its calling signature is:
 ```
@@ -188,14 +190,14 @@ python3 -m conda_build_prepare
 RECIPE
 ```
 
-The only required arguments are:
-* `--dir DIRECTORY` – the path for a directory that will be created with output
-  files (any valid path ending with a name chosen for that directory),
+The required arguments are:
+* `--dir DIRECTORY` – the path for a new directory that will be created with
+  output files,
 * `RECIPE` – the path to the recipe corresponding to the package chosen to be
   built.
 
-To build a package similar to the one built in the CI it is recommended to pass
-such optional arguments:
+To build a package similarly to how the packages are built in the CI it is
+recommended to pass such optional arguments:
 * `--channels litex-hub` – to search for build dependencies in the LiteX-Hub
   channel in addition to the recipe-specific channels (from its `condarc` file),
 * `--packages conda-build=3.20.3 python=3.7` – to use the same versions of
@@ -206,12 +208,16 @@ After preparing, the output `DIRECTORY` will contain such subdirectories:
 * `git-repos` with source git repositories cloned and slightly adjusted,
 * `recipe` with an adjusted recipe (locked requirements, version set etc.).
 
-To build the package using these prepared subdirectories:
-* activate the Conda environment from the `conda-env` directory,
-* run `conda-build` tool on the `recipe` directory.
-
 More details can be found on [the `conda-build-prepare`'s
 GitHub page](https://github.com/litex-hub/conda-build-prepare).
+
+#### Building the package
+
+To build the package using the prepared subdirectories:
+* activate the Conda environment from `DIRECTORY/conda-env`,
+* run `conda-build` tool with `DIRECTORY/recipe`.
+
+#### Script to prepare the recipe and build the package
 
 All of the following commands are meant to be run from the repository root.
 
@@ -238,8 +244,11 @@ fi
 
 # Prepare the RECIPE with `conda-build-prepare`
 ADDITIONAL_PACKAGES="conda-build=3.20.3 python=3.7"
-python3 -m conda_build_prepare --channels litex-hub --packages $ADDITIONAL_PACKAGES \
-            --dir $PREPARED_RECIPE_OUTPUTDIR $RECIPE_PATH
+python3 -m conda_build_prepare               \
+            --channels litex-hub             \
+            --packages $ADDITIONAL_PACKAGES  \
+            --dir $PREPARED_RECIPE_OUTPUTDIR \
+            $RECIPE_PATH
 
 # Activate prepared environment where `conda build` will be run
 conda activate $PREPARED_RECIPE_OUTPUTDIR/conda-env
